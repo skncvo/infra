@@ -8,7 +8,7 @@ ansible/inventory/**/group_vars/*.vault.yml
 
 devops-platform/.token/
 devops-platform/.env
-devops-platform/env/
+devops-platform/env/sonar.env
 devops-platform/platform/gitlab/gitlab-runner-value.yml
 devops-platform/platform/sonarqube/.sonarqube-token
 devops-platform/platform/sonarqube/sonar-secret.yml
