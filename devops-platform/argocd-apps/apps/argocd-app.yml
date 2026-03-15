@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: http://gitlab-nodeport.cicd.svc.cluster.local/devops/devops-platform.git
+    repoURL: https://github.com/skncvo/infra-repo.git
     targetRevision: main
-    path: platform/argocd
+    path: devops-platform/platform/argocd
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
