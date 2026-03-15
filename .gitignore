@@ -1,11 +1,12 @@
+.token/
+
 ansible/inventory/**/hosts.ini
 ansible/inventory/**/.pem/
 ansible/inventory/**/*.pem
 ansible/inventory/**/group_vars/all.yml
 ansible/inventory/**/group_vars/*.vault.yml
 
-devops-platform/.token/.gittoken
-devops-platform/.token/.argotoken
+devops-platform/.token/
 devops-platform/.env
 devops-platform/env/
 devops-platform/platform/gitlab/gitlab-runner-value.yml
