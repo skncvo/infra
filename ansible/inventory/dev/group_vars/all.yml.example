@@ -1,0 +1,50 @@
+controller_nginx:
+  conf_path: /etc/nginx/sites-available/openstack.conf
+  enabled_path: /etc/nginx/sites-enabled/openstack.conf
+  client_max_body_size: 100M
+
+horizon:
+  enabled: true
+  domain: [domain_name]
+
+ingress:
+  nodeport: [nodeport] 
+  nodes:
+    - [node_ip] 
+  services:
+    - domain: [domain_name]
+    - domain: [domain_name]
+    - domain: [domain_name]
+    - domain: [domain_name]
+    - domain: [domain_name]
+    - domain: [domain_name]
+      basic_auth: true
+      basic_auth_file: /etc/nginx/.htpasswd
+
+k8s_common_packages:
+  - vim
+  - nano
+  - curl
+  - wget
+  - git
+  - net-tools
+  - iproute2
+  - iputils-ping
+  - traceroute
+  - tcpdump
+  - htop
+  - tree
+  - unzip
+  - zip
+  - rsync
+  - ca-certificates
+  - software-properties-common
+  - apt-transport-https
+  - gnupg
+  - lsb-release
+
+k8s_hosts_entries:
+  - ip: [inner-ip]
+    name: k8s-master
+  - ip: [inner-ip]
+    name: k8s-worker

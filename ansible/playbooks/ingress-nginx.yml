@@ -1,0 +1,30 @@
+- hosts: k8s_master
+  become: yes
+  tasks:
+    - name: Copy ingress values
+      copy:
+        src: ../roles/ingress_nginx/files/values.yaml
+        dest: /tmp/ingress-values.yaml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Add ingress-nginx helm repo
+      shell: helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+      args:
+        creates: /tmp/.ingress-nginx-repo-added
+
+    - name: Mark ingress-nginx repo added
+      file:
+        path: /tmp/.ingress-nginx-repo-added
+        state: touch
+
+    - name: Update helm repos
+      shell: helm repo update
+
+    - name: Install ingress-nginx
+      shell: >
+        helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx
+        --namespace ingress-nginx
+        --create-namespace
+        -f /tmp/ingress-values.yaml

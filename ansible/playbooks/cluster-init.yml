@@ -1,0 +1,9 @@
+- hosts: k8s_master
+  become: yes
+  roles:
+    - cluster_init_master
+
+- hosts: k8s_worker
+  become: yes
+  roles:
+    - cluster_join_worker

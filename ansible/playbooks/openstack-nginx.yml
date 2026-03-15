@@ -1,0 +1,5 @@
+- name: Configure controller nginx reverse proxy
+  hosts: controller
+  become: true
+  roles:
+    - nginx_proxy

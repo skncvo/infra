@@ -1,0 +1,19 @@
+- name: Check if worker already joined
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf
+
+- name: Read join command from master
+  slurp:
+    src: /tmp/kubeadm_join_cmd.sh
+  delegate_to: "{{ groups['k8s_master'][0] }}"
+  run_once: true
+  register: join_cmd_file
+
+- name: Set join command fact
+  set_fact:
+    kubeadm_join_cmd: "{{ join_cmd_file.content | b64decode | trim }}"
+
+- name: Join worker to Kubernetes cluster
+  shell: "{{ kubeadm_join_cmd }}"
+  when: not kubelet_conf.stat.exists

@@ -1,0 +1,19 @@
+server:
+  dnsPolicy: ClusterFirst
+
+  service:
+    type: ClusterIP
+  extraArgs:
+    - --insecure
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false
+
+repoServer:
+  dnsPolicy: ClusterFirst
+
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: false

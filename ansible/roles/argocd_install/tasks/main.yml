@@ -1,0 +1,53 @@
+- name: Ensure argocd namespace exists
+  shell: kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+  register: argocd_ns_result
+  changed_when: "'created' in argocd_ns_result.stdout or 'configured' in argocd_ns_result.stdout"
+
+- name: Install Argo CD using official manifest
+  shell: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+  register: argocd_install_result
+  changed_when: "'created' in argocd_install_result.stdout or 'configured' in argocd_install_result.stdout"
+
+- name: Wait for argocd-server deployment rollout
+  shell: kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
+  changed_when: false
+
+- name: Ensure argocd-server service is ClusterIP
+  shell: kubectl patch svc argocd-server -n argocd -p '{"spec":{"type":"ClusterIP"}}'
+  register: argocd_svc_patch
+  changed_when: "'patched' in argocd_svc_patch.stdout"
+
+- name: Ensure argocd-cmd-params-cm enables insecure server mode
+  shell: >
+    kubectl patch configmap argocd-cmd-params-cm -n argocd
+    --type merge
+    -p '{"data":{"server.insecure":"true"}}'
+  register: argocd_cmd_params_patch
+  changed_when: "'patched' in argocd_cmd_params_patch.stdout or 'configured' in argocd_cmd_params_patch.stdout"
+
+- name: Restart argocd-server deployment to apply cmd params
+  shell: kubectl rollout restart deployment/argocd-server -n argocd
+  register: argocd_restart
+  changed_when: "'restarted' in argocd_restart.stdout"
+
+- name: Wait for argocd-server deployment after restart
+  shell: kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
+  changed_when: false
+
+- name: Get Argo CD initial admin secret name
+  shell: kubectl get secret -n argocd argocd-initial-admin-secret -o name
+  register: argocd_admin_secret_name
+  changed_when: false
+  failed_when: false
+
+- name: Read Argo CD initial admin password
+  shell: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+  register: argocd_admin_password
+  changed_when: false
+  failed_when: false
+
+- name: Show Argo CD initial admin password
+  debug:
+    msg:
+      - "Argo CD initial username: admin"
+      - "Argo CD initial password: {{ argocd_admin_password.stdout | default('not available') }}"

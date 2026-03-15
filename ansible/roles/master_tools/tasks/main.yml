@@ -1,0 +1,38 @@
+- name: Ensure bash-completion is installed
+  apt:
+    name: bash-completion
+    state: present
+    update_cache: yes
+
+- name: Check if kubectl completion file exists
+  stat:
+    path: /etc/bash_completion.d/kubectl
+  register: kubectl_completion_file
+
+- name: Install kubectl bash completion
+  shell: kubectl completion bash > /etc/bash_completion.d/kubectl
+  when: not kubectl_completion_file.stat.exists
+
+- name: Ensure kubectl alias exists in user's .bashrc
+  lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    line: "alias k='kubectl'"
+    state: present
+    create: yes
+
+- name: Ensure kubectl alias completion exists in user's .bashrc
+  lineinfile:
+    path: "/home/{{ ansible_user }}/.bashrc"
+    line: "complete -o default -F __start_kubectl k"
+    state: present
+    create: yes
+
+- name: Check if helm is already installed
+  command: helm version --short
+  register: helm_version_check
+  changed_when: false
+  failed_when: false
+
+- name: Install helm via official script
+  shell: curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  when: helm_version_check.rc != 0

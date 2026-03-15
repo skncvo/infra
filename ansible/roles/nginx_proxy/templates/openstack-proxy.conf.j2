@@ -1,0 +1,87 @@
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+{% if horizon is defined and horizon.enabled %}
+server {
+    listen 80;
+    server_name {{ horizon.domain }};
+
+    location / {
+        if ($http_upgrade != "") {
+            rewrite ^/(.*) /vnc/$1 last;
+        }
+
+        proxy_pass http://127.0.0.1:8080;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_redirect off;
+        proxy_http_version 1.1;
+    }
+
+    location /vnc/ {
+        proxy_pass http://127.0.0.1:6080;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_redirect off;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+
+    client_max_body_size {{ controller_nginx.client_max_body_size }};
+}
+{% endif %}
+
+upstream ingress_k8s {
+{% for node in ingress.nodes %}
+    server {{ node }}:{{ ingress.nodeport }};
+{% endfor %}
+}
+
+{% for svc in ingress.services %}
+server {
+    listen 80;
+    server_name {{ svc.domain }};
+
+    location / {
+        {% if svc.basic_auth | default(false) %}
+        auth_basic "Restricted Access";
+        auth_basic_user_file {{ svc.basic_auth_file | default('/etc/nginx/.htpasswd') }};
+        {% endif %}
+
+        proxy_pass http://ingress_k8s;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_cache_bypass $http_upgrade;
+
+        proxy_connect_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_read_timeout 600s;
+
+        client_max_body_size {{ controller_nginx.client_max_body_size }};
+    }
+}
+{% endfor %}

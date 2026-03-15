@@ -1,0 +1,15 @@
+- name: Render controller nginx config
+  template:
+    src: openstack-proxy.conf.j2
+    dest: "{{ controller_nginx.conf_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+
+- name: Enable nginx config
+  file:
+    src: "{{ controller_nginx.conf_path }}"
+    dest: "{{ controller_nginx.enabled_path }}"
+    state: link
+  notify: restart nginx

@@ -1,0 +1,57 @@
+- name: Install containerd package
+  apt:
+    name: containerd
+    state: present
+    update_cache: yes
+
+- name: Ensure containerd config directory exists
+  file:
+    path: /etc/containerd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Check whether containerd config exists
+  stat:
+    path: /etc/containerd/config.toml
+  register: containerd_config_stat
+
+- name: Generate default containerd config
+  shell: containerd config default > /etc/containerd/config.toml
+  when: not containerd_config_stat.stat.exists
+  notify: Restart containerd
+
+- name: Set SystemdCgroup=true in containerd config
+  replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+  notify: Restart containerd
+
+- name: Ensure containerd uses CRI plugin socket directory
+  file:
+    path: /run/containerd
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Enable containerd service
+  systemd:
+    name: containerd
+    enabled: yes
+
+- name: Start containerd service
+  systemd:
+    name: containerd
+    state: started
+
+- name: Flush handlers
+  meta: flush_handlers
+
+- name: Verify containerd service is active
+  command: systemctl is-active containerd
+  register: containerd_active
+  changed_when: false
+  failed_when: containerd_active.stdout.strip() != "active"
