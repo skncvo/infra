@@ -1,0 +1,120 @@
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+upstream ingress_k8s {
+{% for node in ingress.nodes %}
+    server {{ node }}:{{ ingress.nodeport }};
+{% endfor %}
+}
+
+{% if horizon is defined and horizon.enabled %}
+server {
+    listen 80;
+    server_name {{ horizon.domain }};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name {{ horizon.domain }};
+
+    ssl_certificate {{ horizon.ssl_certificate }};
+    ssl_certificate_key {{ horizon.ssl_certificate_key }};
+
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    location / {
+        if ($http_upgrade != "") {
+            rewrite ^/(.*) /vnc/$1 last;
+        }
+
+        proxy_pass http://127.0.0.1:8080;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_redirect off;
+        proxy_http_version 1.1;
+    }
+
+    location /vnc/ {
+        proxy_pass http://127.0.0.1:6080;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_redirect off;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+
+    client_max_body_size {{ controller_nginx.client_max_body_size }};
+}
+{% endif %}
+
+{% for svc in ingress.services %}
+server {
+    listen 80;
+    server_name {{ svc.domain }};
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name {{ svc.domain }};
+
+    ssl_certificate {{ svc.ssl_certificate | default('/etc/letsencrypt/live/' ~ svc.domain ~ '/fullchain.pem') }};
+    ssl_certificate_key {{ svc.ssl_certificate_key | default('/etc/letsencrypt/live/' ~ svc.domain ~ '/privkey.pem') }};
+
+    ssl_session_timeout 1d;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+
+    location / {
+        {% if svc.basic_auth | default(false) %}
+        auth_basic "Restricted Access";
+        auth_basic_user_file {{ svc.basic_auth_file | default('/etc/nginx/.htpasswd') }};
+        {% endif %}
+
+        proxy_pass http://ingress_k8s;
+
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_cache_bypass $http_upgrade;
+
+        proxy_buffering off;
+        proxy_request_buffering off;
+
+        proxy_connect_timeout 600s;
+        proxy_send_timeout 600s;
+        proxy_read_timeout 600s;
+        send_timeout 600s;
+
+        client_max_body_size {{ controller_nginx.client_max_body_size }};
+    }
+}
+{% endfor %}
