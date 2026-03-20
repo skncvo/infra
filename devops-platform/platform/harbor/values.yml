@@ -1,0 +1,57 @@
+harbor:
+  expose:
+    type: ingress
+    ingress:
+      className: nginx
+      hosts:
+        core: harbor.chosuncnl.cloud
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+      tls:
+        enabled: false
+
+  externalURL: http://harbor.chosuncnl.cloud
+
+  harborAdminPassword: "Harbor12345"
+
+  persistence:
+    enabled: true
+    persistentVolumeClaim:
+      registry:
+        existingClaim: harbor-registry-pvc
+      database:
+        existingClaim: harbor-database-pvc
+      redis:
+        existingClaim: harbor-redis-pvc
+
+  database:
+    type: internal
+    internal:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker
+
+  redis:
+    type: internal
+    internal:
+      nodeSelector:
+        kubernetes.io/hostname: k8s-worker
+
+  core:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker
+
+  portal:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker
+
+  jobservice:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker
+
+  registry:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker
+
+  trivy:
+    nodeSelector:
+      kubernetes.io/hostname: k8s-worker

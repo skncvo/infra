@@ -1,17 +1,17 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: sonarqube-management
+  name: harbor
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: https://github.com/skncvo/infra.git
-    targetRevision: main
-    path: devops-platform/platform/sonarqube
+    targetRevision: HEAD
+    path: platform/harbor
   destination:
     server: https://kubernetes.default.svc
-    namespace: cicd
+    namespace: harbor
   syncPolicy:
     automated:
       prune: true

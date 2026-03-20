@@ -10,7 +10,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: gitlab.skncvo.cloud
+    - host: gitlab.chosuncnl.cloud
       http:
         paths:
           - path: /

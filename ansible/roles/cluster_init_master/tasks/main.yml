@@ -3,12 +3,31 @@
     path: /etc/kubernetes/admin.conf
   register: kubeadm_admin_conf
 
+# 🔥 추가: 실패 상태 cleanup
+- name: Reset kubeadm if previous failed
+  command: kubeadm reset -f
+  when: not kubeadm_admin_conf.stat.exists
+  ignore_errors: yes
+
+- name: Remove etcd data dir
+  file:
+    path: /var/lib/etcd
+    state: absent
+  when: not kubeadm_admin_conf.stat.exists
+
+- name: Remove kubernetes config dir
+  file:
+    path: /etc/kubernetes
+    state: absent
+  when: not kubeadm_admin_conf.stat.exists
+
+# kubeadm init 
 - name: Initialize Kubernetes master
   shell: >
     kubeadm init
     --apiserver-advertise-address={{ kube_master_ip }}
     --pod-network-cidr={{ pod_network_cidr }}
-    --node-name={{ node_hostname }}
+    --node-name={{ ansible_hostname }}
   when: not kubeadm_admin_conf.stat.exists
   register: kubeadm_init_result
 

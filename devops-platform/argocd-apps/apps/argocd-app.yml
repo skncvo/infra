@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/skncvo/infra-repo.git
+    repoURL: https://github.com/skncvo/infra.git
     targetRevision: main
     path: devops-platform/platform/argocd
   destination:
