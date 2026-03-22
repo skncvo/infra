@@ -6,35 +6,31 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'https://grafana.github.io/helm-charts' # 공식 헬름 레포 주소
-    targetRevision: 2.10.2 # loki-stack 차트 버전
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 2.10.2
     chart: loki-stack
     helm:
       values: |
         loki:
           enabled: true
-          isDefault: false # 추가
           service:
             type: ClusterIP
           persistence:
             enabled: true
-            size: 6Gi  # 로그 저장 용량 (환경에 맞춰 조절)
-          # dnsPolicy: Default
+            size: 6Gi
 
         promtail:
           enabled: true
-          dnsPolicy: Default 
+          dnsPolicy: Default
 
         prometheus:
           enabled: false
+
         grafana:
           enabled: false
-          sidecar:
-            datasources:
-              enabled: false
   destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring # 기존 모니터링 네임스페이스에 통합
+    server: https://kubernetes.default.svc
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
