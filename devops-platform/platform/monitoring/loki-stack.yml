@@ -13,7 +13,7 @@ spec:
       values: |
         loki:
           enabled: true
-          isDefalut: false # 추가
+          isDefault: false # 추가
           service:
             type: ClusterIP
           persistence:
