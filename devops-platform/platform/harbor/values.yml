@@ -10,7 +10,7 @@ harbor:
       tls:
         enabled: false
 
-  externalURL: http://harbor.chosuncnl.cloud
+  externalURL: https://harbor.chosuncnl.cloud
 
   harborAdminPassword: "Harbor12345"
 
