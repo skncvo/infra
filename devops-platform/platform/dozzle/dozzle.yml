@@ -53,8 +53,8 @@ spec:
           env:
             - name: DOZZLE_MODE
               value: "k8s"
-            - name: DOZZLE_NAMESPACE
-              value: "dozzle"
+                #- name: DOZZLE_NAMESPACE
+                #value: "dozzle"
 ---
 apiVersion: v1
 kind: Service
